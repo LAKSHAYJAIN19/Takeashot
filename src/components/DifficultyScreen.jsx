@@ -1,0 +1,77 @@
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import difficultybg from "../assets/multibga.png";
+import "../styles/mainScreen.css";
+
+export default function DifficultyScreen({ goBack, onSelectDifficulty }) {
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        gsap.fromTo(
+            containerRef.current,
+            { opacity: 0 },
+            { opacity: 1, duration: 0.6 }
+        );
+    }, []);
+
+    return (
+        <div
+            className="difficulty-container"
+            style={{ backgroundImage: `url(${difficultybg})` }}
+            ref={containerRef}
+        >
+            <div className="difficulty-overlay" />
+
+            <div className="difficulty-card">
+                <h2 className="difficulty-title">Select Difficulty</h2>
+
+                <div className="difficulty-options">
+
+                    <div className="difficulty-option-item">
+                        <button className="difficulty-btn easy-btn" onClick={() => onSelectDifficulty("easy")}>
+                            Easy
+                        </button>
+                        <p className="difficulty-description">
+                            Low wind, slower arrow speed, larger target zone.
+                        </p>
+                    </div>
+
+                    <div className="difficulty-option-item">
+                        <button className="difficulty-btn medium-btn">
+                            Medium
+                        </button>
+                        <p className="difficulty-description">
+                            Moderate wind variation and balanced speed.
+                        </p>
+                    </div>
+
+                    <div className="difficulty-option-item">
+                        <button className="difficulty-btn hard-btn">
+                            Hard
+                        </button>
+                        <p className="difficulty-description">
+                            Faster arrows and stronger unpredictable wind.
+                        </p>
+                    </div>
+
+                    <div className="difficulty-option-item">
+                        <button className="difficulty-btn expert-btn">
+                            Expert
+                        </button>
+                        <p className="difficulty-description">
+                            Extreme wind shifts, high speed, precision required.
+                        </p>
+                    </div>
+
+                </div>
+
+                <button
+                    className="difficulty-back-btn-small"
+                    onClick={goBack}
+                >
+                    Back
+                </button>
+            </div>
+        </div>
+    );
+}
