@@ -37,7 +37,7 @@ export default function DifficultyScreen({ goBack, onSelectDifficulty }) {
                     </div>
 
                     <div className="difficulty-option-item">
-                        <button className="difficulty-btn medium-btn">
+                        <button className="difficulty-btn medium-btn" onClick={() => onSelectDifficulty("medium")}>
                             Medium
                         </button>
                         <p className="difficulty-description">
@@ -46,7 +46,7 @@ export default function DifficultyScreen({ goBack, onSelectDifficulty }) {
                     </div>
 
                     <div className="difficulty-option-item">
-                        <button className="difficulty-btn hard-btn">
+                        <button className="difficulty-btn hard-btn" onClick={() => onSelectDifficulty("hard")}>
                             Hard
                         </button>
                         <p className="difficulty-description">
@@ -55,7 +55,7 @@ export default function DifficultyScreen({ goBack, onSelectDifficulty }) {
                     </div>
 
                     <div className="difficulty-option-item">
-                        <button className="difficulty-btn expert-btn">
+                        <button className="difficulty-btn expert-btn" onClick={() => onSelectDifficulty("expert")}>
                             Expert
                         </button>
                         <p className="difficulty-description">

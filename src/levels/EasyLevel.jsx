@@ -1,3 +1,4 @@
+// I will rewrite your component cleanly so mechanics match real archery behaviour
 import { useState, useRef, useEffect } from "react";
 import easyBg from "../assets/levels/easy.png";
 import arrowImg from "../assets/finalarrow.png";
@@ -8,74 +9,67 @@ import "./EasyLevel.css";
 
 export default function EasyLevel({ goToDifficulty, goToMain }) {
 
-    const [isAiming, setIsAiming] = useState(false);
+    const [isHolding, setIsHolding] = useState(false);
     const [showScore, setShowScore] = useState(false);
     const [score, setScore] = useState(0);
     const [aimY, setAimY] = useState(0);
+    const [holdPower, setHoldPower] = useState(0);
 
     const arrowRef = useRef(null);
     const targetRef = useRef(null);
-    const aimAnim = useRef(null);
-    const holding = useRef(false);
+    const animRef = useRef(null);
 
     /* ---------------- AIM OSCILLATION ---------------- */
 
     useEffect(() => {
-        if (!isAiming) return;
+        if (!isHolding) return;
 
         let dir = 1;
-        let pos = -85;
+        let pos = -90;
 
-        aimAnim.current = setInterval(() => {
-            pos += dir * 2.5;
-
-            if (pos > 85) dir = -1;
-            if (pos < -85) dir = 1;
-
+        animRef.current = setInterval(() => {
+            pos += dir * 2.8;
+            if (pos > 90) dir = -1;
+            if (pos < -90) dir = 1;
             setAimY(pos);
         }, 16);
 
-        return () => clearInterval(aimAnim.current);
-    }, [isAiming]);
+        return () => clearInterval(animRef.current);
+    }, [isHolding]);
 
-    /* ---------------- SCORE ---------------- */
+    /* ---------------- HOLD POWER METER ---------------- */
 
-    const calculateScore = (hitY, height) => {
+    useEffect(() => {
+        if (!isHolding) return;
+        let p = 0;
+        const meter = setInterval(() => {
+            p += 2.2;
+            if (p > 100) p = 100;
+            setHoldPower(p);
+        }, 16);
+        return () => clearInterval(meter);
+    }, [isHolding]);
+
+    /* ---------------- SCORE FROM REAL HIT POINT ---------------- */
+
+    const computeScore = (impactY, height) => {
         const center = height / 2;
         const radius = height / 2;
+        const dist = Math.abs(impactY - center);
 
-        const dist = Math.abs(hitY - center);
-
-        // ❌ Missed target
         if (dist > radius) return 0;
 
-        // 🎯 Continuous score (1–10)
-        const normalized = dist / radius;          // 0 → center, 1 → edge
-        let score = Math.round(10 - normalized * 9);
-
-        // safety clamp
-        score = Math.max(1, Math.min(10, score));
-
-        return score;
-
+        const normalized = dist / radius;
+        return Math.max(1, Math.round(10 - normalized * 9));
     };
 
-    /* ---------------- HOLD START ---------------- */
+    /* ---------------- SHOOT ---------------- */
 
-    const startAim = () => {
-        if (showScore) return;
-        holding.current = true;
-        setIsAiming(true);
-    };
+    const releaseShot = () => {
+        if (!isHolding) return;
 
-    /* ---------------- RELEASE = SHOOT ---------------- */
-
-    const releaseAim = () => {
-        if (!holding.current) return;
-        holding.current = false;
-
-        clearInterval(aimAnim.current);
-        setIsAiming(false);
+        setIsHolding(false);
+        clearInterval(animRef.current);
 
         const arrow = arrowRef.current;
         const target = targetRef.current;
@@ -84,36 +78,59 @@ export default function EasyLevel({ goToDifficulty, goToMain }) {
         const a = arrow.getBoundingClientRect();
         const t = target.getBoundingClientRect();
 
-        const hitY = t.height / 2 + aimY;
-        const finalScore = calculateScore(hitY, t.height);
+        /* ---- 1. BOW POSITION (launch origin) ---- */
+        const originX = a.left + a.width * 0.9;
+        const originY = a.top + a.height * 0.5;
+
+        /* ---- 2. AIM POINT FROM SCOPE ---- */
+        const aimPointY = originY + aimY * 2.2; // converts UI oscillation to world space
+
+        /* ---- 3. CALCULATE ANGLE ---- */
+        const dx = t.left - originX;
+        const dy = aimPointY - originY;
+        const angle = Math.atan2(dy, dx);
+
+        /* ---- 4. INTERSECTION WITH TARGET PLANE ---- */
+        const targetPlaneX = t.left;
+        const distanceToPlane = targetPlaneX - originX;
+
+        const hitY = originY + Math.tan(angle) * distanceToPlane;
+
+        /* ---- 5. SCORE ---- */
+        const impactY = hitY - t.top;
+        const finalScore = computeScore(impactY, t.height);
         setScore(finalScore);
 
-        const deltaX = t.left - a.left + 40;
-        const deltaY = t.top + hitY - a.top;
+        /* ---- 6. ANIMATE ARROW ---- */
+        const deltaX = distanceToPlane;
+        const deltaY = hitY - originY;
 
-        arrow.style.transition = "transform 0.9s cubic-bezier(.2,.8,.2,1)";
-        arrow.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+        arrow.style.transition = "transform 0.85s cubic-bezier(.22,.61,.36,1)";
+        arrow.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${angle}rad)`;
 
-        setTimeout(() => setShowScore(true), 900);
+        setTimeout(() => setShowScore(true), 850);
     };
+
 
     /* ---------------- RESET ---------------- */
 
     const closeScore = () => {
         setShowScore(false);
+        setHoldPower(0);
+        setAimY(0);
 
         const arrow = arrowRef.current;
         if (arrow) {
             arrow.style.transition = "none";
-            arrow.style.transform = "translate(0px,0px)";
+            arrow.style.transform = "translate(0,0)";
         }
     };
 
-    const getScoreMessage = (score) => {
-        if (score === 0) return "You missed it completely, try again !";
-        if (score <= 4) return "Ahh, not so perfect, Try again";
-        if (score <= 7) return "Good, but you can do better";
-        if (score <= 9) return "Great,you are few inches away from hitting the bullseye";
+    const getScoreMessage = (s) => {
+        if (s === 0) return "You missed it completely, try again !";
+        if (s <= 4) return "Ahh, not so perfect, Try again";
+        if (s <= 7) return "Good, but you can do better";
+        if (s <= 9) return "Great, you are few inches away from hitting the bullseye";
         return "Excellent, you have got an eagle eye";
     };
 
@@ -122,8 +139,7 @@ export default function EasyLevel({ goToDifficulty, goToMain }) {
 
             <div className="easy-overlay" />
 
-            {/* GAME WORLD */}
-            <div className={`easy-game-layer ${isAiming ? "aim-mode" : ""}`}>
+            <div className={`easy-game-layer ${isHolding ? "aim-mode" : ""}`}>
 
                 <div className="easy-bow-wrapper">
                     <img src={bowImg} className="easy-bow" alt="bow" />
@@ -132,30 +148,28 @@ export default function EasyLevel({ goToDifficulty, goToMain }) {
 
                 <img ref={targetRef} src={targetImg} className="easy-target" alt="target" />
 
-                {/* AIM LINE */}
-                {isAiming && (
-                    <div className="aim-line" style={{ transform: `translateY(${aimY}px)` }} />
+                {isHolding && (
+                    <>
+                        <div className="scope" style={{ transform: `translateY(${aimY}px)` }} />
+                        <div className="hold-meter">
+                            <div className="hold-fill" style={{ height: `${holdPower}%` }} />
+                        </div>
+                    </>
                 )}
             </div>
 
-            {/* HOLD BUTTON */}
             {!showScore && (
                 <button
                     className="easy-shoot-btn"
-
-                    onMouseDown={startAim}
-                    onMouseUp={releaseAim}
-                    onMouseLeave={releaseAim}
-
-                    onTouchStart={startAim}
-                    onTouchEnd={releaseAim}
+                    onPointerDown={(e)=>{e.preventDefault();setIsHolding(true)}}
+                    onPointerUp={(e)=>{e.preventDefault();releaseShot()}}
+                    onContextMenu={(e)=>e.preventDefault()}
                 >
                     <span className="shoot-main">Shoot</span>
                     <span className="shoot-sub">(Hold & Release)</span>
                 </button>
             )}
 
-            {/* SCORE */}
             {showScore && (
                 <div className="easy-popup">
                     <div className="easy-popup-box easy-score-box" style={{ backgroundImage: `url(${scoreBg})` }}>
@@ -163,13 +177,8 @@ export default function EasyLevel({ goToDifficulty, goToMain }) {
                         <p className="score-message">{getScoreMessage(score)}</p>
 
                         <div className="easy-popup-buttons">
-                            <button className="score-btn play-again" onClick={() => { closeScore(); goToDifficulty(); }}>
-                                Play Again
-                            </button>
-
-                            <button className="score-btn main-menu" onClick={() => { closeScore(); goToMain(); }}>
-                                Main Screen
-                            </button>
+                            <button className="score-btn play-again" onClick={() => { closeScore(); goToDifficulty(); }}>Play Again</button>
+                            <button className="score-btn main-menu" onClick={() => { closeScore(); goToMain(); }}>Main Screen</button>
                         </div>
                     </div>
                 </div>
