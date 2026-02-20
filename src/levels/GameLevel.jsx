@@ -431,7 +431,6 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
                         <img className="bow" src={config.bow} alt="" />
                         <img className="frontHand" src={config.frontHand} alt="" />
                         <img className="backHand" src={config.backHand} alt="" />
-                        <img className="string" src={config.string} alt="" />
                     </div>
                 </div>
 
