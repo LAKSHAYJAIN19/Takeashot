@@ -127,17 +127,8 @@
 .backHand {
     position: absolute;
     left: 0;
+    bottom: 0;
     width: 320px;
-}
-.bow {
-    bottom:0;
-}    
-.frontHand {
-    bottom: 20px;   /* tweak until aligned */
-}
-
-.backHand {
-    bottom: 12px;
 }
 
 .bow { z-index: 8; }
