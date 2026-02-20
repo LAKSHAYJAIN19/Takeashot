@@ -4,7 +4,7 @@ import targetMedium from "../assets/target_medium.png";
 import targetHard from "../assets/target_hard.png";
 import targetExpert from "../assets/target_expert.png";
 import bowf from "../assets/bowff.png";
-import lefthand from "../assets/lefthand.png"
+import lefthand from "../assets/lefthandd.png"
 import righthand from "../assets/righthandd.png"
 import scope from "../assets/bscope.png";
 import bowstring from "../assets/bowstring.svg"
