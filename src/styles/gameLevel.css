@@ -130,13 +130,13 @@
     bottom: 0;
 }
 .frontHand {
-    width: 400px;
+    width: 320px;
 }    
 .backHand {
-    width:340px
+    width:320px
 }
 .bow {
-    width:340px;
+    width:320px;
 }    
 .bow { z-index: 8; }
 .frontHand { z-index: 12; }
