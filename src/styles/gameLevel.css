@@ -128,9 +128,16 @@
     position: absolute;
     left: 0;
     bottom: 0;
-    width: 320px;
 }
-
+.frontHand {
+    width: 340px;
+}    
+.backHand {
+    width:340px
+}
+.bow {
+    width:320px;
+}    
 .bow { z-index: 8; }
 .frontHand { z-index: 12; }
 .backHand { z-index: 15; }
