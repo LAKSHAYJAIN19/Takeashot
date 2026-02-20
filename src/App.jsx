@@ -33,29 +33,29 @@ function App() {
                 />
             )}
 
-            {/*{screen === "medium" && (*/}
-            {/*    <GameLevel*/}
-            {/*        level="medium"*/}
-            {/*        goToDifficulty={() => setScreen("difficulty")}*/}
-            {/*        goToMain={() => setScreen("main")}*/}
-            {/*    />*/}
-            {/*)}*/}
+            {screen === "medium" && (
+                <GameLevel
+                    level="medium"
+                    goToDifficulty={() => setScreen("difficulty")}
+                    goToMain={() => setScreen("main")}
+                />
+            )}
 
-            {/*{screen === "hard" && (*/}
-            {/*    <GameLevel*/}
-            {/*        level="hard"*/}
-            {/*        goToDifficulty={() => setScreen("difficulty")}*/}
-            {/*        goToMain={() => setScreen("main")}*/}
-            {/*    />*/}
-            {/*)}*/}
+            {screen === "hard" && (
+                <GameLevel
+                    level="hard"
+                    goToDifficulty={() => setScreen("difficulty")}
+                    goToMain={() => setScreen("main")}
+                />
+            )}
 
-            {/*{screen === "expert" && (*/}
-            {/*    <GameLevel*/}
-            {/*        level="expert"*/}
-            {/*        goToDifficulty={() => setScreen("difficulty")}*/}
-            {/*        goToMain={() => setScreen("main")}*/}
-            {/*    />*/}
-            {/*)}*/}
+            {screen === "expert" && (
+                <GameLevel
+                    level="expert"
+                    goToDifficulty={() => setScreen("difficulty")}
+                    goToMain={() => setScreen("main")}
+                />
+            )}
         </>
     );
 }
