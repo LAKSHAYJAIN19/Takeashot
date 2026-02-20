@@ -70,10 +70,37 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
     const stabilityStartRef = useRef(null);
     const stabilityFrameRef = useRef(null);
 
+    const [countdown, setCountdown] = useState(3);
+    const [showCountdown, setShowCountdown] = useState(true);
+    const [showDragMessage, setShowDragMessage] = useState(false);
+
     const SCOPE_SIZE = 110;
     const SCOPE_RADIUS = SCOPE_SIZE / 2;
     const [currentDeviation, setCurrentDeviation] = useState(null);
 
+    const dragStartRef = useRef({ x: 0, y: 0 });
+    const scopeStartRef = useRef({ x: 0, y: 0 });
+
+    /* ---------------- COUNTDOWN BEFORE START ---------------- */
+    useEffect(() => {
+        let timer;
+
+        if (showCountdown) {
+            if (countdown > 0) {
+                timer = setTimeout(() => {
+                    setCountdown(prev => prev - 1);
+                }, 1000);
+            } else {
+                // show GO briefly
+                timer = setTimeout(() => {
+                    setShowCountdown(false);
+                    setShowDragMessage(true);
+                }, 700);
+            }
+        }
+
+        return () => clearTimeout(timer);
+    }, [countdown, showCountdown]);
 
 
     /* ---------------- CREATE AUDIO ONCE ---------------- */
@@ -101,16 +128,16 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
         setPerfectShake(false);
         setIsArrowFlying(false);
 
+        const target = document.getElementById("target-image");
+        if (target) {
+            const rect = target.getBoundingClientRect();
+            setScopePos({
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            });
+        }
         startTimeRef.current = null;
         clearInterval(timerRef.current);
-
-        // const angle = Math.random() * Math.PI * 2;
-        // const strength = config.windStrength || 5;
-        //
-        // windRef.current = {
-        //     x: Math.cos(angle) * strength,
-        //     y: Math.sin(angle) * strength
-        // };
     }, [level]);
 
     /* ---------------- STABILITY OSCILLATION ---------------- */
@@ -176,41 +203,8 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
 
     /*-----------------Wind Deviation-----------------*/
     const generateDeviation = () => {
-        // const windStrength = config.windStrength || 5;
-        //
-        // // scale max deviation safely
-        // const maxDeviation = 0.05 + (windStrength * 0.05);
-        // // windStrength 1 → 0.10
-        // // windStrength 5 → 0.30
-        // // windStrength 8 → 0.45
-        //
-        // const pool = [];
-        //
-        // for (let i = 0; i < 20; i++) {
-        //     const val = Number(
-        //         (Math.random() * maxDeviation).toFixed(2)
-        //     );
-        //
-        //     if (val > 0.05) pool.push(val);
-        // }
-        //
-        // const magnitude =
-        //     pool[Math.floor(Math.random() * pool.length)];
-        //
-        // const direction =
-        //     DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
-        //
-        // const deviation = { magnitude, direction };
-        //
-        // setCurrentDeviation(deviation);
-        // return deviation;
-        const windStrength = config?.windStrength ?? 0.25;
 
-        // Max deviation scaled to your config range
-        // easy (0.25)  → ~0.08 max
-        // medium (0.45) → ~0.12 max
-        // hard (0.7) → ~0.18 max
-        // expert (1.1) → ~0.28 max
+        const windStrength = config?.windStrength ?? 0.25;
         const maxDeviation = 0.03 + (windStrength * 0.25);
 
         const pool = [];
@@ -269,14 +263,24 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
         const deviation = generateDeviation(); // 🔥 generate immediately
         setCurrentDeviation(deviation);
 
-        setScopePos(clampToCircle(x, y));
+        dragStartRef.current = { x, y };
+        scopeStartRef.current = scopePos;
+
+        // setScopePos(clampToCircle(x, y));
         setIsAiming(true);
         startTimer();
     };
 
     const moveAim = (x, y) => {
         if (!isAiming) return;
-        setScopePos(clampToCircle(x, y));
+        const dx = x - dragStartRef.current.x;
+        const dy = y - dragStartRef.current.y;
+
+        const newX = scopeStartRef.current.x + dx;
+        const newY = scopeStartRef.current.y + dy;
+
+        setScopePos(clampToCircle(newX, newY));
+        // setScopePos(clampToCircle(x, y));
     };
 
     const endAim = () => {
@@ -377,14 +381,32 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
     const handleMouseMove = e => moveAim(e.clientX, e.clientY);
     const handleMouseUp = () => endAim();
 
-    const handleTouchStart = e =>
+    const handleTouchStart = (e) => {
+
+        if (showDragMessage) {
+            setShowDragMessage(false);
+        }
+
         startAim(e.touches[0].clientX, e.touches[0].clientY);
+    };
     const handleTouchMove = e =>
         moveAim(e.touches[0].clientX, e.touches[0].clientY);
     const handleTouchEnd = () => endAim();
 
     return (
         <div className="game-container">
+
+            {showCountdown && (
+                <div className="countdown-overlay">
+                    {countdown > 0 ? countdown : "GO!!!"}
+                </div>
+            )}
+
+            {showDragMessage && (
+                <div className="drag-overlay">
+                    Drag to Start
+                </div>
+            )}
             <div className="top-ui">
                 <div>Level: {level.toUpperCase()}</div>
                 <div>Time: {timeLeft}s</div>
@@ -484,5 +506,6 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
         </div>
     );
 }
+
 
 
