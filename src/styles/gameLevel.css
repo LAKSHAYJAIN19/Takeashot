@@ -70,7 +70,7 @@
 .target-container{
     position: absolute;
     top: 50%;
-    left: 50%;
+    left: 40%;
     transform: translate(-50%, -50%);
     z-index: 5;
 }
@@ -130,7 +130,7 @@
     bottom: 0;
 }
 .frontHand {
-    width: 400px;
+    width: 340px;
 }    
 .backHand {
     width:340px
