@@ -128,25 +128,12 @@
     position: absolute;
     bottom: 0;
     left: 0;
-    width: 100%;
-    /* left: 50%; */
-    /* transform: translateX(-50%); */
-    /* width: 320px; */
+    width: 320px;
 }
 
 .bow { z-index: 8; }
 .frontHand { z-index: 12; }
 .backHand { z-index: 15; }
-
-/* .string {
-    position: absolute;
-    bottom: 0;
-    /* left: 50%; */
-    left: 0;
-    transform: translate(calc(-50% - var(--pull)));
-    width: 100%;
-    z-index: 13;
-} */
 
 .blur-overlay {
     position: absolute;
