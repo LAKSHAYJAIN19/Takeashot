@@ -5,7 +5,7 @@ import targetHard from "../assets/target_hard.png";
 import targetExpert from "../assets/target_expert.png";
 import bowf from "../assets/bowff.png";
 import lefthand from "../assets/lefthand.png"
-import righthand from "../assets/righthand.png"
+import righthand from "../assets/righthandd.png"
 import scope from "../assets/bscope.png";
 import bowstring from "../assets/bowstring.svg"
 import arrowone from "../assets/arrowone.png";
