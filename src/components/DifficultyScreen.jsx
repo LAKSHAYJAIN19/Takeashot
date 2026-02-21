@@ -32,7 +32,7 @@ export default function DifficultyScreen({ goBack, onSelectDifficulty }) {
                             Easy
                         </button>
                         <p className="difficulty-description">
-                            Low wind, slower arrow speed, larger target zone.
+                            Light wind, steady aim, stationary target.
                         </p>
                     </div>
 
@@ -41,7 +41,7 @@ export default function DifficultyScreen({ goBack, onSelectDifficulty }) {
                             Medium
                         </button>
                         <p className="difficulty-description">
-                            Moderate wind variation and balanced speed.
+                            Shifting wind, slight target movement.
                         </p>
                     </div>
 
@@ -50,7 +50,7 @@ export default function DifficultyScreen({ goBack, onSelectDifficulty }) {
                             Hard
                         </button>
                         <p className="difficulty-description">
-                            Faster arrows and stronger unpredictable wind.
+                            Strong wind, moving targets, fast arrows.
                         </p>
                     </div>
 
@@ -59,7 +59,7 @@ export default function DifficultyScreen({ goBack, onSelectDifficulty }) {
                             Expert
                         </button>
                         <p className="difficulty-description">
-                            Extreme wind shifts, high speed, precision required.
+                            Rapid wind shifts, unpredictable moving targets.
                         </p>
                     </div>
 
