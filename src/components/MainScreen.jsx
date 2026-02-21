@@ -5,7 +5,7 @@ import ExitModal from "./ExitModal";
 import "../styles/mainScreen.css";
 import mainbg from "../assets/mainbga.png";
 
-export default function MainScreen({ goToHowToPlay }) {
+export default function MainScreen({ goToHowToPlay, musicEnabled, setMusicEnabled, soundEnabled, setSoundEnabled }) {
     const [showSettings, setShowSettings] = useState(false);
     const [showExit, setShowExit] = useState(false);
 
@@ -63,7 +63,12 @@ export default function MainScreen({ goToHowToPlay }) {
             </div>
 
             {showSettings && (
-                <SettingsModal onClose={() => setShowSettings(false)} />
+                <SettingsModal
+                               onClose={() => setShowSettings(false)}
+                               musicEnabled={musicEnabled}
+                               setMusicEnabled={setMusicEnabled}
+                               soundEnabled={soundEnabled}
+                               setSoundEnabled={setSoundEnabled}/>
             )}
 
             {showExit && (
