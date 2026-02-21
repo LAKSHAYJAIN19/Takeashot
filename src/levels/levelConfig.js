@@ -17,7 +17,7 @@ import tstand from "../assets/targetstand.png";
 
 export const LEVELS = {
     easy: {
-        stabilityTime: 4200,
+        stabilityTime: 4000,
         totalTime: 10000,
         aimAssist: 0.65,
         randomDrift: 4,
@@ -35,7 +35,7 @@ export const LEVELS = {
     },
 
     medium: {
-        stabilityTime: 3500,
+        stabilityTime: 3000,
         totalTime: 10000,
         aimAssist: 0.45,
         randomDrift: 7,
@@ -53,7 +53,7 @@ export const LEVELS = {
     },
 
     hard: {
-        stabilityTime: 2700,
+        stabilityTime: 2200,
         totalTime: 10000,
         aimAssist: 0.25,
         randomDrift: 11,
@@ -71,7 +71,7 @@ export const LEVELS = {
     },
 
     expert: {
-        stabilityTime: 2000,
+        stabilityTime: 1800,
         totalTime: 10000,
         aimAssist: 0.05,
         randomDrift: 16,
