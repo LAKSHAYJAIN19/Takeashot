@@ -70,7 +70,7 @@
 .target-container{
     position: absolute;
     top: 50%;
-    left: 35%;
+    left: 22%;
     transform: translate(-50%, -50%);
     z-index: 5;
 }
@@ -173,24 +173,92 @@
     transition: all 0.4s ease-out;
 }
 
-/* ---------------- SCORE POPUP ---------------- */
 
-.score-popup {
-    position: absolute;
+
+
+/* ---------- SCORE OVERLAY ---------- */
+
+.score-overlay {
+    position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(15px);
+    background: rgba(0,0,0,0.45);
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    color: white;
-    z-index: 100;
+    z-index: 999;
 }
+
+/* ---------- SCORE CARD ---------- */
+
+.score-card {
+    width: 92vw;
+    max-width: 360px;
+    height: 85vh;                /* FULL HEIGHT LIKE DESIGN */
+    max-height: 680px;
+
+    background-size: contain;    /* THIS is the key fix */
+    background-repeat: no-repeat;
+    background-position: center;
+
+    border-radius: 28px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ---------- INNER CONTENT ---------- */
+
+.score-inner {
+    position: absolute;
+    bottom: 20%;
+    width: 100%;
+    text-align: center;
+    padding: 0 25px;
+    color: white;
+}
+
+/* ---------- TITLE ---------- */
+
+.score-title {
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    text-shadow: 0 5px 15px rgba(0,0,0,0.7);
+}
+
+/* ---------- MESSAGE ---------- */
+
+.score-message {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    line-height: 1.3;
+    text-shadow: 0 5px 15px rgba(0,0,0,0.7);
+}
+
+/* ---------- BUTTONS ---------- */
 
 .score-buttons {
     display: flex;
-    gap: 12px;
-    margin-top: 15px;
+    justify-content: center;
+    gap: 18px;
+}
+
+.score-btn {
+    background: black;
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.score-btn:hover {
+    transform: scale(1.05);
 }
 .deviation-ui {
     position: absolute;
