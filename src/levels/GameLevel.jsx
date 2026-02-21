@@ -3,6 +3,7 @@ import { LEVELS } from "./levelConfig";
 import "../styles/gameLevel.css";
 import arrowImg from "../assets/arrowtwo.png";
 import windImg from "../assets/winddirection.png";
+import scoreBg from "../assets/scorebgablur.png";
 
 import bowLoadSound from "../assets/sounds/bowload.mp3";
 import arrowReleaseSound from "../assets/sounds/arrowrelease.mp3";
@@ -41,7 +42,14 @@ const getDirectionalOffset = (direction, magnitude, radius) => {
         default: return { x: 0, y: 0 };
     }
 };
-export default function GameLevel({ level, goToDifficulty, goToMain }) {
+const getScoreMessage = (s) => {
+    if (s === 0) return "You missed it completely, try again !";
+    if (s <= 4) return "Ahh, not so perfect, Try again";
+    if (s <= 7) return "Good, but you can do better";
+    if (s <= 9) return "Great, you are few inches away from hitting the bullseye";
+    return "Excellent, you have got an eagle eye";
+};
+export default function GameLevel({ level, goToDifficulty, goToMain , soundEnabled}) {
     const config = LEVELS[level];
     if (!config) return null;
 
@@ -55,11 +63,11 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
     const [scopePos, setScopePos] = useState({ x: 0, y: 0 });
     const [arrowImpact, setArrowImpact] = useState(null);
 
+    const [targetOffset, setTargetOffset] = useState(0); // NEW
+
     const timerRef = useRef(null);
     const startTimeRef = useRef(null);
-    const windRef = useRef({ x: 0, y: 0 });
 
-    // 🔥 AUDIO REFS (created once)
     const bowLoad = useRef(null);
     const arrowRelease = useRef(null);
     const normalHit = useRef(null);
@@ -81,6 +89,10 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
     const dragStartRef = useRef({ x: 0, y: 0 });
     const scopeStartRef = useRef({ x: 0, y: 0 });
 
+    const targetMoveFrameRef = useRef(null);
+    const [adaptiveError, setAdaptiveError] = useState(config.errorMultiplier); // NEW
+
+    const [timeUp, setTimeUp] = useState(false);
     /* ---------------- COUNTDOWN BEFORE START ---------------- */
     useEffect(() => {
         let timer;
@@ -118,6 +130,16 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
         miss.current.preload = "auto";
     }, []);
 
+    useEffect(() => {
+        if (!soundEnabled) {
+            bowLoad.current?.pause();
+            arrowRelease.current?.pause();
+            normalHit.current?.pause();
+            perfectHit.current?.pause();
+            miss.current?.pause();
+        }
+    }, [soundEnabled]);
+
     /* ---------------- RESET ---------------- */
     useEffect(() => {
         setTimeLeft(config.totalTime / 1000);
@@ -127,6 +149,7 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
         setIsAiming(false);
         setPerfectShake(false);
         setIsArrowFlying(false);
+        setTimeUp(false);
 
         const target = document.getElementById("target-image");
         if (target) {
@@ -140,7 +163,52 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
         clearInterval(timerRef.current);
     }, [level]);
 
-    /* ---------------- STABILITY OSCILLATION ---------------- */
+
+    /* ---------------- DYNAMIC WIND ---------------- */
+    useEffect(() => {
+        if (!isAiming) return;
+        if (!config.dynamicWind) return;
+
+        const interval = setInterval(() => {
+            generateDeviation();
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, [isAiming, config.dynamicWind]);
+
+    /* ---------------- MOVING TARGET ---------------- */
+    useEffect(() => {
+        if (!config.movingTarget) return;
+
+        let start = Date.now();
+
+        const animate = () => {
+            if (!isAiming) return; // 🔥 STOP when not aiming
+
+            const elapsed = (Date.now() - start) / 1000;
+
+            let amplitude = 10;
+            let speed = 1;
+
+            if (config.movingTarget === "advanced") {
+                amplitude = 25;
+                speed = 2;
+            }
+
+            setTargetOffset(Math.sin(elapsed * speed) * amplitude);
+
+            targetMoveFrameRef.current = requestAnimationFrame(animate);
+        };
+
+        if (isAiming) {
+            targetMoveFrameRef.current = requestAnimationFrame(animate);
+        }
+
+        return () => cancelAnimationFrame(targetMoveFrameRef.current);
+
+    }, [config.movingTarget, isAiming]);
+
+    /* ---------------- STABILITY ---------------- */
     useEffect(() => {
         if (!isAiming) {
             cancelAnimationFrame(stabilityFrameRef.current);
@@ -152,16 +220,13 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
 
         const animateStability = () => {
             const elapsed = Date.now() - stabilityStartRef.current;
-            const stabilityTime = config.stabilityTime || 2000;
+            const fatiguePoint = config.fatigueAfter ?? config.stabilityTime;
 
             let intensity = 0;
 
-            if (elapsed > stabilityTime) {
-                // After stability time expires → start shaking
-                const overflow = elapsed - stabilityTime;
-
-                // Gradually increase instability
-                intensity = Math.min(overflow / 1000, 6);
+            if (elapsed > fatiguePoint) {
+                const overflow = elapsed - fatiguePoint;
+                intensity = Math.min(overflow / 800, 8);
             }
 
             setStabilityOffset({
@@ -173,18 +238,16 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
         };
 
         animateStability();
-
         return () => cancelAnimationFrame(stabilityFrameRef.current);
 
-    }, [isAiming, config.stabilityTime]);
+    }, [isAiming, config.stabilityTime, config.fatigueAfter]);
 
     /* ---------------- TIMER ---------------- */
     const startTimer = () => {
         if (startTimeRef.current) return;
         startTimeRef.current = Date.now();
 
-        // play bowload ONCE
-        if (bowLoad.current) {
+        if (bowLoad.current && soundEnabled) {
             bowLoad.current.currentTime = 0;
             bowLoad.current.play();
         }
@@ -193,7 +256,10 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     clearInterval(timerRef.current);
-                    shootArrow();
+                    setTimeUp(true);
+                    setIsAiming(false);
+                    setScore(0);
+                    setShotTaken(true);
                     return 0;
                 }
                 return prev - 1;
@@ -201,40 +267,22 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
         }, 1000);
     };
 
-    /*-----------------Wind Deviation-----------------*/
+    /* ---------------- WIND ---------------- */
     const generateDeviation = () => {
-
         const windStrength = config?.windStrength ?? 0.25;
         const maxDeviation = 0.03 + (windStrength * 0.25);
 
-        const pool = [];
-
-        for (let i = 0; i < 25; i++) {
-            const val = Number(
-                (Math.random() * maxDeviation).toFixed(2)
-            );
-
-            // avoid zero / too tiny deviations
-            if (val >= 0.02) {
-                pool.push(val);
-            }
-        }
-
-        // Fallback safety (prevents NaN forever)
-        const magnitude =
-            pool.length > 0
-                ? pool[Math.floor(Math.random() * pool.length)]
-                : 0;
+        const magnitude = Number(
+            (Math.random() * maxDeviation).toFixed(2)
+        );
 
         const direction =
             DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)] || "N";
 
         const deviation = { magnitude, direction };
-
         setCurrentDeviation(deviation);
         return deviation;
     };
-
 
     /* ---------------- AIM ---------------- */
     const clampToCircle = (clientX, clientY) => {
@@ -260,13 +308,9 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
     };
 
     const startAim = (x, y) => {
-        const deviation = generateDeviation(); // 🔥 generate immediately
-        setCurrentDeviation(deviation);
-
+        generateDeviation();
         dragStartRef.current = { x, y };
         scopeStartRef.current = scopePos;
-
-        // setScopePos(clampToCircle(x, y));
         setIsAiming(true);
         startTimer();
     };
@@ -280,36 +324,41 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
         const newY = scopeStartRef.current.y + dy;
 
         setScopePos(clampToCircle(newX, newY));
-        // setScopePos(clampToCircle(x, y));
     };
 
     const endAim = () => {
         if (!isAiming) return;
+        if (timeUp || timeLeft <= 0) return; // 🔥 block release
+
         shootArrow();
     };
 
     /* ---------------- SHOOT ---------------- */
     const shootArrow = () => {
         setIsAiming(false);
+        cancelAnimationFrame(targetMoveFrameRef.current);
         clearInterval(timerRef.current);
 
         if (!arrowRelease.current) return;
 
-        arrowRelease.current.currentTime = 0;
-        arrowRelease.current.play();
+        if(soundEnabled){
+            arrowRelease.current.currentTime = 0;
+            arrowRelease.current.play();
+        }
 
         const releaseDuration =
             (arrowRelease.current.duration || 0.6) * 1000;
 
         const target = document.getElementById("target-image");
         const rect = target.getBoundingClientRect();
+
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
-        const scaledRadius = rect.width / 2;
-        const ringWidth = scaledRadius / 10;
 
-        // const impactX = scopePos.x + windRef.current.x;
-        // const impactY = scopePos.y + windRef.current.y;
+        const scaledRadius =
+            (rect.width / 2) * (config.shrinkingHitbox || 1);
+
+        const ringWidth = scaledRadius / 10;
 
         const windOffset = getDirectionalOffset(
             currentDeviation?.direction || "N",
@@ -317,12 +366,17 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
             scaledRadius
         );
 
-        const impactX = scopePos.x + windOffset.x;
-        const impactY = scopePos.y + windOffset.y;
+        const errorOffsetX =
+            (Math.random() - 0.5) * adaptiveError * scaledRadius * 0.05;
+
+        const errorOffsetY =
+            (Math.random() - 0.5) * adaptiveError * scaledRadius * 0.05;
+
+        const impactX = scopePos.x + windOffset.x + errorOffsetX;
+        const impactY = scopePos.y + windOffset.y + errorOffsetY;
 
         setIsArrowFlying(true);
 
-        // Wait until arrow reaches target
         setTimeout(() => {
             setIsArrowFlying(false);
             setArrowImpact({ x: impactX, y: impactY });
@@ -340,38 +394,41 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
                 );
                 calculatedScore = 10 - ringIndex;
             }
-
-            // IMPACT SOUND EXACTLY HERE
             if (calculatedScore === 10) {
-                perfectHit.current.currentTime = 0;
-                perfectHit.current.play();
-
                 setPerfectShake(true);
+                setTimeout(() => setPerfectShake(false), 800);
+            }
 
-                const totalDelay =
-                    (perfectHit.current.duration || 1) * 1000 + 300;
+            // Adaptive Expert
+            if (config.adaptiveDifficulty) {
+                if (calculatedScore >= 9) {
+                    setAdaptiveError(prev => prev + 0.05);
+                }
+                if (calculatedScore <= 4) {
+                    setAdaptiveError(prev =>
+                        Math.max(config.errorMultiplier, prev - 0.05)
+                    );
+                }
+            }
 
-                setTimeout(() => {
-                    setPerfectShake(false);
-                    setScore(calculatedScore);
-                    setShotTaken(true);
-                }, totalDelay);
+            const hitSound =
+                calculatedScore === 10
+                    ? perfectHit.current
+                    : calculatedScore > 0
+                        ? normalHit.current
+                        : miss.current;
 
-            } else {
-                const hitSound =
-                    calculatedScore > 0 ? normalHit.current : miss.current;
-
+            if(soundEnabled)
+            {
                 hitSound.currentTime = 0;
                 hitSound.play();
-
-                const delay =
-                    (hitSound.duration || 0.6) * 1000;
-
-                setTimeout(() => {
-                    setScore(calculatedScore);
-                    setShotTaken(true);
-                }, delay);
             }
+
+            setTimeout(() => {
+                setTargetOffset(0);
+                setScore(calculatedScore);
+                setShotTaken(true);
+            }, (hitSound.duration || 0.6) * 1000);
 
         }, releaseDuration);
     };
@@ -382,20 +439,17 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
     const handleMouseUp = () => endAim();
 
     const handleTouchStart = (e) => {
-
-        if (showDragMessage) {
-            setShowDragMessage(false);
-        }
-
+        if (showDragMessage) setShowDragMessage(false);
         startAim(e.touches[0].clientX, e.touches[0].clientY);
     };
+
     const handleTouchMove = e =>
         moveAim(e.touches[0].clientX, e.touches[0].clientY);
+
     const handleTouchEnd = () => endAim();
 
     return (
         <div className="game-container">
-
             {showCountdown && (
                 <div className="countdown-overlay">
                     {countdown > 0 ? countdown : "GO!!!"}
@@ -407,10 +461,12 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
                     Drag to Start
                 </div>
             )}
+
             <div className="top-ui">
                 <div>Level: {level.toUpperCase()}</div>
                 <div>Time: {timeLeft}s</div>
             </div>
+
             {currentDeviation && (
                 <div className="deviation-ui">
                     <img
@@ -439,7 +495,13 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
                 <div className="world">
                     <img className="game-background" src={config.background} alt="" />
 
-                    <div className="target-container">
+                    <div
+                        className="target-container"
+                        style={{
+                            transform: `translateX(${targetOffset}px) scale(0.8)`,
+                            transformOrigin: "left center",
+                            marginTop: "-80px"}}
+                    >
                         <img
                             id="target-image"
                             src={config.target}
@@ -468,8 +530,8 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
                         <div
                             className="scope-container"
                             style={{
-                                left: scopePos.x+stabilityOffset.x,
-                                top: scopePos.y+stabilityOffset.y,
+                                left: scopePos.x + stabilityOffset.x,
+                                top: scopePos.y + stabilityOffset.y,
                                 width: SCOPE_SIZE,
                                 height: SCOPE_SIZE,
                                 transform: "translate(-50%, -50%)"
@@ -493,19 +555,41 @@ export default function GameLevel({ level, goToDifficulty, goToMain }) {
                     />
                 )}
             </div>
-
+            
             {shotTaken && (
-                <div className="score-popup">
-                    <h2>Your Score : {score}</h2>
-                    <div className="score-buttons">
-                        <button onClick={goToDifficulty}>Play Again</button>
-                        <button onClick={goToMain}>Main Screen</button>
+                <div className="score-overlay">
+                    <div
+                        className="score-card"
+                        style={{ backgroundImage: `url(${scoreBg})` }}
+                    >
+                        <div className="score-inner">
+                            <h1 className="score-title">
+                                Your Score : {score}
+                            </h1>
+
+                            <p className="score-message">
+                                {getScoreMessage(score)}
+                            </p>
+
+                            <div className="score-buttons">
+                                <button
+                                    className="score-btn"
+                                    onClick={goToDifficulty}
+                                >
+                                    Play Again
+                                </button>
+
+                                <button
+                                    className="score-btn"
+                                    onClick={goToMain}
+                                >
+                                    Main Screen
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
         </div>
     );
 }
-
-
-
