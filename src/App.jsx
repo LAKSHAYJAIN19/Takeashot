@@ -33,19 +33,29 @@ function App() {
         }
     };
 
+    const resumeMusic = () => {
+        if (!bgMusicRef.current) return;
+        if (musicEnabled) {
+            bgMusicRef.current.play().catch(() => {});
+        }
+    };
+
     // 🎵 Screen-based behavior
     useEffect(() => {
         if (!bgMusicRef.current) return;
 
-        // Stop during gameplay
-        if (["easy", "medium", "hard", "expert"].includes(screen)) {
+        const gameplayScreens = ["easy", "medium", "hard", "expert"];
+
+        // Pause during gameplay
+        if (gameplayScreens.includes(screen)) {
             bgMusicRef.current.pause();
+            return;
         }
 
-        // Resume on main or score
-        if ((screen === "main" || screen === "score") && musicEnabled) {
+        if (screen === "main" && musicEnabled) {
             bgMusicRef.current.play().catch(() => {});
         }
+
     }, [screen, musicEnabled]);
 
     // 🎵 Toggle behavior
@@ -92,9 +102,13 @@ function App() {
                 <GameLevel
                     level={screen}
                     goToDifficulty={() => setScreen("difficulty")}
-                    goToMain={() => setScreen("main")}
+                    goToMain={() => {
+                        resumeMusic();
+                        setScreen("main");
+                    }}
                     soundEnabled={soundEnabled}
                     goToScore={() => setScreen("score")}
+                    onPlayAgain={resumeMusic}
                 />
             )}
         </>
