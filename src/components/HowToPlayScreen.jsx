@@ -25,15 +25,14 @@ export default function HowToPlayScreen({ onBack,onPlay }) {
                 <h2>How To Play</h2>
 
                 <ul className="howtoplay-instructions">
-                    <li>Select a difficulty level.</li>
-                    <li>Adjust arrow speed using the vertical slider.</li>
-                    <li>Use magnifier slider to zoom the target.</li>
-                    <li>Wind speed is generated automatically.</li>
-                    <li>Press Shoot when ready.</li>
-                    <li>Confirm your arrow speed.</li>
-                    <li>Watch the slow-motion arrow shot.</li>
-                    <li>Score ranges from 1 to 10.</li>
-                    <li>Hints appear after two scores below 7.</li>
+                    <li>Choose your difficulty and get ready.</li>
+                    <li>After the countdown, drag anywhere on the screen to aim.</li>
+                    <li>Keep your scope steady inside the target circle.</li>
+                    <li>Wind will push your aim — and it may shift direction mid-shot.</li>
+                    <li>Stay alert and adjust quickly as conditions change.</li>
+                    <li>Hold too long and your aim may become unstable.</li>
+                    <li>Release to shoot before time runs out.</li>
+                    <li>Hit closer to the center to score between 0 and 10.</li>
                 </ul>
 
                 <div className="howtoplay-buttons">
