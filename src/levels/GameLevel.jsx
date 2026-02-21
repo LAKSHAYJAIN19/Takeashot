@@ -49,7 +49,7 @@ const getScoreMessage = (s) => {
     if (s <= 9) return "Great, you are few inches away from hitting the bullseye";
     return "Excellent, you have got an eagle eye";
 };
-export default function GameLevel({ level, goToDifficulty, goToMain , soundEnabled}) {
+export default function GameLevel({ level, goToDifficulty, goToMain , soundEnabled,onPlayAgain}) {
     const config = LEVELS[level];
     if (!config) return null;
 
@@ -555,7 +555,7 @@ export default function GameLevel({ level, goToDifficulty, goToMain , soundEnabl
                     />
                 )}
             </div>
-            
+
             {shotTaken && (
                 <div className="score-overlay">
                     <div
@@ -574,7 +574,10 @@ export default function GameLevel({ level, goToDifficulty, goToMain , soundEnabl
                             <div className="score-buttons">
                                 <button
                                     className="score-btn"
-                                    onClick={goToDifficulty}
+                                    onClick={() => {
+                                        onPlayAgain();
+                                        goToDifficulty();
+                                    }}
                                 >
                                     Play Again
                                 </button>
